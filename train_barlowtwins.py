@@ -46,7 +46,7 @@ def main() :
                         help='number of data loader workers')
     parser.add_argument('--epochs', default=1000, type=int, metavar='N',
                         help='number of total epochs to run')
-    parser.add_argument('--batch-size', default=2048, type=int, metavar='N',
+    parser.add_argument('--batch-size', default=1024, type=int, metavar='N',
                         help='mini-batch size')
     parser.add_argument('--learning-rate-weights', default=0.2, type=float, metavar='LR',
                         help='base learning rate for weights')
@@ -97,7 +97,7 @@ def main() :
         mode = 'min'
     )
 
-    trainer = pl.Trainer(max_epochs=250, strategy="dp", accelerator="gpu", devices=2, logger=logger, callbacks=[checkpoint_callback])
+    trainer = pl.Trainer(max_epochs=1, strategy="dp", accelerator="gpu", devices=1, logger=logger, callbacks=[checkpoint_callback])
     trainer.fit(model)
 
     print('Done!!')

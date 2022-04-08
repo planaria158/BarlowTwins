@@ -33,6 +33,7 @@ class barlowtwins_resnet50(pl.LightningModule):
         self.betas = [0.5, 0.999]
         self.args = args
         self.trainset = ds_train 
+        self.workers = args.workers
 
         # The Encoder
         self.encoder = models.resnet50()
@@ -89,7 +90,7 @@ class barlowtwins_resnet50(pl.LightningModule):
         
     def training_step(self, batch, batch_idx) :
         loss, diag, off_diag, c = self.__shared_step(batch)
-        self.c_matrix = np.copy(c.detach().numpy())
+        self.c_matrix = np.copy(c.detach().cpu().numpy())
         c_min = np.min(self.c_matrix)
         c_max = np.max(self.c_matrix)
         self.log("train_loss", loss, on_epoch=True) 
@@ -107,7 +108,7 @@ class barlowtwins_resnet50(pl.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "train_loss"}        
     
     def train_dataloader(self):
-        return DataLoader(self.trainset, batch_size=self.batch_size, shuffle=True, pin_memory=True, num_workers=6)
+        return DataLoader(self.trainset, batch_size=self.batch_size, shuffle=True, pin_memory=True, num_workers=self.workers)
     
 #     def on_train_epoch_end(self):
 #         # make the C matrix image
