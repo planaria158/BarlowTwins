@@ -29,8 +29,8 @@ import subprocess
 import time
 
 from PIL import Image, ImageOps, ImageFilter
-from BarlowTwins_CIFAR10_classifier_dataset import *
-from resnet50_cifar10_classifier import *
+from BarlowTwins_CIFAR10_dataset import *
+from barlowtwins_resnet50 import *
 
 print('torch version:', torch.__version__)
 print('torchvision version:', torchvision.__version__)
@@ -46,7 +46,7 @@ def main() :
                         help='number of data loader workers')
     parser.add_argument('--epochs', default=1000, type=int, metavar='N',
                         help='number of total epochs to run')
-    parser.add_argument('--batch-size', default=4096, type=int, metavar='N',
+    parser.add_argument('--batch-size', default=2048, type=int, metavar='N',
                         help='mini-batch size')
     parser.add_argument('--learning-rate-weights', default=0.2, type=float, metavar='LR',
                         help='base learning rate for weights')
@@ -56,9 +56,7 @@ def main() :
                         help='weight decay')
     parser.add_argument('--lambd', default=0.0051, type=float, metavar='L',
                         help='weight on off-diagonal terms')
-    # parser.add_argument('--projector', default='8192-8192-8192', type=str,
-    #                     metavar='MLP', help='projector MLP')
-    parser.add_argument('--projector', default='1024-1024-1024', type=str,
+    parser.add_argument('--projector', default='8192-8192-8192', type=str,
                         metavar='MLP', help='projector MLP')
     parser.add_argument('--print-freq', default=100, type=int, metavar='N',
                         help='print frequency')
@@ -71,8 +69,8 @@ def main() :
 
     geo_transforms = A.Compose(
         [
-    #      A.HorizontalFlip(p=0.5),
-    #      A.VerticalFlip(p=0.5),
+         A.HorizontalFlip(p=0.5),
+         A.VerticalFlip(p=0.5),
          A.Normalize(),
          ToTensorV2(),
         ]
@@ -80,33 +78,22 @@ def main() :
 
     pixel_transforms = A.Compose(
         [
+         A.Blur(blur_limit=[3,3], p=0.5),
+         A.Solarize(p=0.5),
          ToTensorV2(),
         ]
     )
 
-#     transform = transforms.Compose(
-#         [transforms.ToTensor(),
-#          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-#     ds_train = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-# #     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-
-#     ds_val = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-# #     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)    
-
-    ds_train = BT_CIFAR10_Classify_Dataset(train=True, geo_transform=geo_transforms, pixel_transform=pixel_transforms)
+    ds_train = barlowtwins_cifar10_dataset(train=True, geo_transform=geo_transforms, pixel_transform=pixel_transforms)
     print('ds_train length:', ds_train.__len__())
 
-    ds_val = BT_CIFAR10_Classify_Dataset(train=False, geo_transform=geo_transforms, pixel_transform=pixel_transforms)
-    print('ds_val length:', ds_val.__len__())
-
     # Create untrained model 
-    model = resnet50_cifar10_classifier(ds_train, ds_val, args, base_barlow_model_encoder=None)
-    logger = pl.loggers.TensorBoardLogger('./lightning_logs', 'barlow_classifier')
+    model = barlowtwins_resnet50(ds_train, args)
+    logger = pl.loggers.TensorBoardLogger('./lightning_logs', 'barlow')
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         save_top_k=1,
         every_n_epochs=1,
-        monitor = 'val_loss',
+        monitor = 'train_loss',
         mode = 'min'
     )
 

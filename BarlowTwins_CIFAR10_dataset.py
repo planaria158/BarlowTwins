@@ -24,7 +24,7 @@ from sklearn.preprocessing import OneHotEncoder
 #  geo_transform: transform for geometric operations to image/mask pairs
 #  pixel_transform: pixel-based (color etc) transform for just images.
 #
-class BT_CIFAR10_Dataset(torchvision.datasets.CIFAR10):
+class barlowtwins_cifar10_dataset(torchvision.datasets.CIFAR10):
     def __init__(self, train=True, geo_transform=None, pixel_transform=None):
         super().__init__(root='./data', train=train, download=True)
         

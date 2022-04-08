@@ -19,30 +19,29 @@ import pytorch_lightning as pl
 
 
 
-class BarlowModelClassifier_ResNet18(pl.LightningModule):
+class resnet50_cifar10_classifier(pl.LightningModule):
     def __init__(self, ds_train, ds_val, args, base_barlow_model_encoder):
-        super(BarlowModelClassifier_ResNet18, self).__init__()
+        super(resnet50_cifar10_classifier, self).__init__()
         self.batch_size = args.batch_size
         print('batch size:', self.batch_size)
-        self.lr = 0.0002
+        self.lr = 0.0001
         self.betas = [0.5, 0.999]
         self.args = args
         self.trainset = ds_train 
         self.valset = ds_val
-#         self.criterion = torch.nn.CrossEntropyLoss()
 
         # Encoder: from previously trained BarlowTwins ResNet18 model
         if base_barlow_model_encoder == None:
             print('Creating new base encoder')
-            self.encoder = models.resnet18(zero_init_residual=True)
-            self.encoder.fc = nn.Identity()
+            self.encoder = models.resnet50()
+            #self.encoder.fc = nn.Identity()
         else:
             print('Using the passed-in base encoder')
             self.encoder = base_barlow_model_encoder
         
         # Classification Head
         layers = []
-        layers.append(nn.Linear(512, 100, bias=False))
+        layers.append(nn.Linear(1000, 100, bias=False))
         layers.append(nn.BatchNorm1d(100))
         layers.append(nn.ReLU(inplace=True))
         layers.append(nn.Linear(100, 10, bias=False))
@@ -82,6 +81,6 @@ class BarlowModelClassifier_ResNet18(pl.LightningModule):
         return DataLoader(self.trainset, batch_size=self.batch_size, shuffle=True, pin_memory=True, num_workers=6)
     
     def val_dataloader(self):
-        return DataLoader(self.valset, batch_size=self.batch_size, shuffle=False, pin_memory=True, num_workers=6)       
+        return DataLoader(self.valset, batch_size=self.batch_size, shuffle=True, pin_memory=True, num_workers=6)       
 
     
