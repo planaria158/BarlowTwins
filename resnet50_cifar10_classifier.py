@@ -28,6 +28,7 @@ class resnet50_cifar10_classifier(pl.LightningModule):
         self.args = args
         self.trainset = ds_train 
         self.valset = ds_val
+        self.workers = args.workers
 
         # Encoder: from previously trained BarlowTwins ResNet18 model
         if base_barlow_model_encoder == None:
@@ -77,9 +78,11 @@ class resnet50_cifar10_classifier(pl.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "train_loss"}        
     
     def train_dataloader(self):
-        return DataLoader(self.trainset, batch_size=self.batch_size, shuffle=True, pin_memory=True, num_workers=6)
+        return DataLoader(self.trainset, batch_size=self.batch_size, shuffle=True, 
+                          pin_memory=torch.cuda.is_available(), num_workers=self.workers)
     
     def val_dataloader(self):
-        return DataLoader(self.valset, batch_size=self.batch_size, shuffle=True, pin_memory=True, num_workers=6)       
+        return DataLoader(self.valset, batch_size=self.batch_size, shuffle=False, 
+                          pin_memory=torch.cuda.is_available(), num_workers=self.workers)       
 
     

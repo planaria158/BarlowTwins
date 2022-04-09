@@ -108,7 +108,8 @@ class barlowtwins_resnet50(pl.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "train_loss"}        
     
     def train_dataloader(self):
-        return DataLoader(self.trainset, batch_size=self.batch_size, shuffle=True, pin_memory=True, num_workers=self.workers)
+        return DataLoader(self.trainset, batch_size=self.batch_size, shuffle=True, 
+                          pin_memory=torch.cuda.is_available(), num_workers=self.workers)
     
 #     def on_train_epoch_end(self):
 #         # make the C matrix image

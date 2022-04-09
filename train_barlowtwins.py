@@ -97,7 +97,8 @@ def main() :
         mode = 'min'
     )
 
-    trainer = pl.Trainer(max_epochs=1, strategy="dp", accelerator="gpu", devices=1, logger=logger, callbacks=[checkpoint_callback])
+    trainer = pl.Trainer(max_epochs=250, strategy="dp", accelerator="gpu", devices=2, logger=logger, callbacks=[checkpoint_callback],
+                        resume_from_checkpoint='./lightning_logs/barlow/version_0/checkpoints/epoch=49-step=2449.ckpt')
     trainer.fit(model)
 
     print('Done!!')

@@ -31,6 +31,7 @@ import time
 from PIL import Image, ImageOps, ImageFilter
 from BarlowTwins_CIFAR10_classifier_dataset import *
 from resnet50_cifar10_classifier import *
+from barlowtwins_resnet50 import *
 
 print('torch version:', torch.__version__)
 print('torchvision version:', torchvision.__version__)
@@ -56,9 +57,7 @@ def main() :
                         help='weight decay')
     parser.add_argument('--lambd', default=0.0051, type=float, metavar='L',
                         help='weight on off-diagonal terms')
-    # parser.add_argument('--projector', default='8192-8192-8192', type=str,
-    #                     metavar='MLP', help='projector MLP')
-    parser.add_argument('--projector', default='1024-1024-1024', type=str,
+    parser.add_argument('--projector', default='8192-8192-8192', type=str,
                         metavar='MLP', help='projector MLP')
     parser.add_argument('--print-freq', default=100, type=int, metavar='N',
                         help='print frequency')
@@ -71,8 +70,6 @@ def main() :
 
     geo_transforms = A.Compose(
         [
-    #      A.HorizontalFlip(p=0.5),
-    #      A.VerticalFlip(p=0.5),
          A.Normalize(),
          ToTensorV2(),
         ]
@@ -84,24 +81,22 @@ def main() :
         ]
     )
 
-#     transform = transforms.Compose(
-#         [transforms.ToTensor(),
-#          transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
-
-#     ds_train = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-# #     trainloader = torch.utils.data.DataLoader(trainset, batch_size=batch_size, shuffle=True, num_workers=2)
-
-#     ds_val = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-# #     testloader = torch.utils.data.DataLoader(testset, batch_size=batch_size, shuffle=False, num_workers=2)    
-
     ds_train = BT_CIFAR10_Classify_Dataset(train=True, geo_transform=geo_transforms, pixel_transform=pixel_transforms)
     print('ds_train length:', ds_train.__len__())
 
     ds_val = BT_CIFAR10_Classify_Dataset(train=False, geo_transform=geo_transforms, pixel_transform=pixel_transforms)
     print('ds_val length:', ds_val.__len__())
 
+    # Load previously trained barlowtwins_resnet50 model
+    # Expects to have base barlow model initialized from checkpoint
+    bt_resnet50_chkpt = './lightning_logs/barlow/version_1/checkpoints/epoch=58-step=2890.ckpt'
+    blah = barlowtwins_resnet50.load_from_checkpoint(checkpoint_path=bt_resnet50_chkpt, ds_train=None, args=args)
+    blah.freeze()
+    encoder = blah.encoder    
+    
+    
     # Create untrained model 
-    model = resnet50_cifar10_classifier(ds_train, ds_val, args, base_barlow_model_encoder=None)
+    model = resnet50_cifar10_classifier(ds_train, ds_val, args, base_barlow_model_encoder=encoder)
     logger = pl.loggers.TensorBoardLogger('./lightning_logs', 'barlow_classifier')
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         save_top_k=1,
